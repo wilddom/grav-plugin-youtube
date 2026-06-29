@@ -43,7 +43,7 @@ class YoutubeTwigExtension extends AbstractExtension
         $grav = Grav::instance();
 
         // build base video embed URL (while respecting privacy enhanced mode setting)
-        $url = 'https://www.youtube' . ($privacy_enhanced_mode ? '-nocookie' : '') . '.com/embed/' . $video_id;
+        $url = 'https://www.youtube' . ($privacy_enhanced_mode ? '-nocookie' : '') . '.com/embed/' . ($video_id ? $video_id : 'videoseries');
 
         // Set the video to autoplay if lazy_load is enabled
         if($lazy_load == true) {

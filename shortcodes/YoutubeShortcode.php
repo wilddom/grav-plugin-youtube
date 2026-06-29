@@ -5,7 +5,7 @@ use Thunder\Shortcode\Shortcode\ShortcodeInterface;
 
 class YoutubeShortcode extends Shortcode
 {
-    const YOUTUBE_REGEX = '/(?:https?:\/{2}(?:(?:www.youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=))|(?:youtu\.be\/)))([a-zA-Z0-9_-]{11})/';
+    const YOUTUBE_REGEX = '/(?:(?:https?:\/{2})?(?:(?:(?:www\.)?youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|(?:e(?:mbed)?)\/(?:videoseries)?)|playlist|\S*?[?&]v=))|(?:youtu\.be\/)))([a-zA-Z0-9_-]{11})?(?:[?&](.*))?/';
 
     public function init()
     {
@@ -22,11 +22,38 @@ class YoutubeShortcode extends Shortcode
                 preg_match($this::YOUTUBE_REGEX, $url, $matches);
                 $search = $matches[0];
 
-                // double check to make sure we found a valid YouTube video ID
-                if (!isset($matches[1])) {
-                    return $search;
+                $video_id = null;
+                if (isset($matches[1])) {
+                    $video_id = $matches[1];
                 }
 
+                if (isset($matches[2])) {
+                    parse_str($matches[2], $querystring);
+
+                    if (isset($querystring['list'])) {
+                        $params['list'] = $querystring['list'];
+                    }
+
+                    if (isset($querystring['t'])) {
+                        $params['start'] = $querystring['t'];
+                    }
+
+                    if (isset($querystring['start'])) {
+                        $params['start'] = $querystring['start'];
+                    }
+
+                    if (isset($querystring['size'])) {
+                        $parts = explode(',', $querystring['size']);
+                        if (count($parts) === 2) {
+                            $params['height'] = $parts[0];
+                            $params['width'] = $parts[1];
+                        }
+                    }
+                }
+
+                if (is_null($video_id) && !isset($params['list'])) {
+                    return $search;
+                }
 
                 // If there is a custom thumbnail, get the url
                 $custom_thumbnail_url ='';                
@@ -65,7 +92,7 @@ class YoutubeShortcode extends Shortcode
                     'player_parameters' => array_merge($pluginConfig['player_parameters'], $player),
                     'iframe_attributes' => $iframe_attributes,
                     'privacy_enhanced_mode' => $sc->getParameter('privacy_enhanced_mode',$pluginConfig['privacy_enhanced_mode']),
-                    'video_id' => $matches[1],
+                    'video_id' => $video_id,
                     'class' => $sc->getParameter('class'),
                     'lazy_load' => $sc->getParameter('lazy_load',$pluginConfig['lazy_load']),
                     'thumbnail' => $custom_thumbnail_url,
